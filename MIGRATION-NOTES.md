@@ -28,6 +28,17 @@ All 6 errors are the same removed type — **`IPublishedSnapshotAccessor`** (CS0
 - `UrlFallbackTextResolver`: `snapshot.Content.GetByRoute(args[0])` → **Task 4** (inject `IPublishedContentCache`, `GetByRoute(false, path)` — ⚠verify overload).
 - `FallbackValueConverter`: `ConvertIntermediateToXPath` override no longer on `IPropertyValueConverter` → **Task 5** (delete it; subclass `PropertyValueConverterBase`).
 
+## Server-side DataEditors required (plan gap) — PropertyEditors/FallbackTextDataEditors.cs
+
+The plan's Task 7 said "schema registered via umbraco-package.json, no C# editor class needed".
+**That is wrong for v14+.** A client `propertyEditorSchema` manifest is UI-only; there is no
+manifest→server-`IDataEditor` bridge, so the editor alias stays unresolved server-side (which
+is exactly why the 13→17 migration downgraded these data types to `Umbraco.Plain.String`).
+Added `[DataEditor("FallbackTextstring", ValueType=String)]` / `[DataEditor("FallbackTextarea",
+ValueType=Text)]` (auto-discovered) subclassing `DataEditor`, value editor `TextOnlyValueEditor`
+— matching the v9 storage (Nvarchar / Ntext). The client manifest + these coexist by alias
+(same as core `Umbraco.TextArea`). The `FallbackValueConverter` routes on the same aliases.
+
 ## Task 6/8 deviation — preview endpoint takes the template, not a dataTypeKey
 
 The plan's client `#resolveContext` was to return a `dataTypeKey` and the API was
