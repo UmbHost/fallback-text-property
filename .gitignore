@@ -352,3 +352,6 @@ MigrationBackup/
 **/TEMP/**
 Wholething.FallbackTextProperty.Example/App_Data/cache/
 *.bat
+
+# Vite/Lit client build output
+Wholething.FallbackTextProperty/App_Plugins/FallbackTextstring/dist/

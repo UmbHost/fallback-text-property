@@ -41,4 +41,11 @@
     <InternalsVisibleTo Include="Wholething.FallbackTextProperty.Test" />
   </ItemGroup>
 
+  <!-- Build the Vite/Lit client bundle into App_Plugins/FallbackTextstring/dist.
+       Skipped on incremental Debug builds when the bundle already exists. -->
+  <Target Name="BuildClient" BeforeTargets="Build" Condition="!Exists('App_Plugins\FallbackTextstring\dist\fallback.js') Or '$(Configuration)' == 'Release'">
+    <Exec Command="npm ci" WorkingDirectory="Client" />
+    <Exec Command="npm run build" WorkingDirectory="Client" />
+  </Target>
+
 </Project>

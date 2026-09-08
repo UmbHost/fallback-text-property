@@ -1,0 +1,19 @@
+{
+  "name": "fallback-text-property-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@umbraco-cms/backoffice": "^17.0.0",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.0"
+  },
+  "dependencies": {
+    "mustache": "^4.2.0",
+    "@types/mustache": "^4.2.5"
+  }
+}
