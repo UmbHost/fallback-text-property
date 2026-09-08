@@ -28,6 +28,41 @@ All 6 errors are the same removed type — **`IPublishedSnapshotAccessor`** (CS0
 - `UrlFallbackTextResolver`: `snapshot.Content.GetByRoute(args[0])` → **Task 4** (inject `IPublishedContentCache`, `GetByRoute(false, path)` — ⚠verify overload).
 - `FallbackValueConverter`: `ConvertIntermediateToXPath` override no longer on `IPropertyValueConverter` → **Task 5** (delete it; subclass `PropertyValueConverterBase`).
 
+## Task 6/8 deviation — preview endpoint takes the template, not a dataTypeKey
+
+The plan's client `#resolveContext` was to return a `dataTypeKey` and the API was
+`BuildDictionaryAsync(nodeId, blockId, dataTypeKey, culture)`. **The new backoffice
+does not expose the dataType key to a property-editor UI element** (verified in the CMS
+client source: `property.context.ts` surfaces `config`/`value`/`variantId`/appearance,
+never the dataType unique — unlike AngularJS `$scope.model.dataTypeKey`). The editor
+*does* have its own fallback template (a config value), so the contract changed to
+`BuildDictionary(nodeId, blockId, template, culture)` (now **sync** — no `IDataTypeService`
+load). `IDataTypeService` dropped from `FallbackTextService`. `BuildValue` (server render)
+is unchanged — it still reads `propertyType.DataType.ConfigurationObject`.
+
+## Tasks 7-9 — client (Vite + TS + Lit)
+
+- `experimentalDecorators: **true**` (the plan said false). Lit in Umbraco 17 uses legacy
+  decorators; `useDefineForClassFields:false` — matches the main site's dl-backoffice bundle.
+- Elements: `FallbackPreviewElementBase` (shared) resolves node key + culture from
+  `UMB_PROPERTY_DATASET_CONTEXT` (`getUnique()` / `getVariantId().culture`) and fetches
+  `/umbraco/fallbacktext/dictionary` with a bearer token from `UMB_AUTH_CONTEXT.getLatestToken()`
+  (the documented pattern for custom endpoints); textstring (`uui-input`) + textarea
+  (`uui-textarea`, honours `rows`) extend it. Preview is best-effort (any failure = no preview,
+  field still usable). Own-node/node-id templates preview; function-ref (`ancestor:`/`parent:`)
+  preview keys aren't stripped client-side (server render remains authoritative).
+
+## ⚠ Needs an in-browser smoke test on a running 17.6.2 backoffice (cannot unit-verify)
+
+1. The preview fetch actually authenticates against `[Authorize(BackOfficeAccess)]` with the
+   bearer token (bearer vs cookie scheme on a non-management custom controller).
+2. `UMB_PROPERTY_DATASET_CONTEXT` timing: config + context both resolve before the first
+   preview attempt (there's a `firstUpdated` retry, but confirm live).
+3. Block-scoped editing: `blockId` isn't resolved yet (own-node only) — matches the old
+   package's documented "nothing tree-related inside blocks" limitation, but confirm.
+4. The manifest's built-in settings UI aliases (`Umb.PropertyEditorUi.TextBox/TextArea/
+   Integer/Toggle`) and `propertyEditorSchema` shape render the config panel correctly.
+
 ## Reconciliations the plan's draft tests need (real code, verified reading source)
 
 - `FallbackTextFunctionReference` shape is **`Function` (string) + `Args` (string[]) + `Key`** — NOT `Argument`/`Key` only as Task 4's draft test assumed.

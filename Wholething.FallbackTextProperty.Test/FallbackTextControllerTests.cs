@@ -10,16 +10,16 @@ namespace Wholething.FallbackTextProperty.Test;
 public class FallbackTextControllerTests
 {
     [Test]
-    public async Task GetDictionary_ReturnsServiceResult()
+    public void GetDictionary_ReturnsServiceResult()
     {
         var nodeId = Guid.NewGuid();
-        var dtKey = Guid.NewGuid();
+        const string template = "{{pageTitle}}";
         var svc = new Mock<IFallbackTextService>();
-        svc.Setup(s => s.BuildDictionaryAsync(nodeId, null, dtKey, "en-US"))
-           .ReturnsAsync(new Dictionary<string, object> { ["pageTitle"] = "Welcome" });
+        svc.Setup(s => s.BuildDictionary(nodeId, null, template, "en-US"))
+           .Returns(new Dictionary<string, object> { ["pageTitle"] = "Welcome" });
 
         var controller = new FallbackTextController(svc.Object);
-        var result = await controller.Dictionary(nodeId, dtKey, "en-US", null) as OkObjectResult;
+        var result = controller.Dictionary(nodeId, template, "en-US", null) as OkObjectResult;
 
         Assert.That(result, Is.Not.Null);
         var dict = (IDictionary<string, object>)result!.Value!;

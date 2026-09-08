@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using HandlebarsDotNet;
-using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Models.Blocks;
@@ -23,20 +21,17 @@ namespace Wholething.FallbackTextProperty.Services.Impl
         private readonly IEnumerable<IFallbackTextResolver> _resolvers;
         private readonly IFallbackTextReferenceParser _referenceParser;
 
-        private readonly IDataTypeService _dataTypeService;
-
         private readonly IFallbackTextLoggerService _logger;
 
         private const string IdReferencePattern = @"{{(?>node)?([0-9]+):(\w+)}}";
         private const string GuidReferencePattern = @"(?im)[0-9A-F]{8}[-]?(?:[0-9A-F]{4}[-]?){3}[0-9A-F]{12}";
 
         public FallbackTextService(IPublishedContentCache contentCache, IEnumerable<IFallbackTextResolver> resolvers,
-            IFallbackTextReferenceParser referenceParser, IDataTypeService dataTypeService, IFallbackTextLoggerService logger)
+            IFallbackTextReferenceParser referenceParser, IFallbackTextLoggerService logger)
         {
             _contentCache = contentCache;
             _resolvers = resolvers;
             _referenceParser = referenceParser;
-            _dataTypeService = dataTypeService;
             _logger = logger;
         }
 
@@ -113,14 +108,13 @@ namespace Wholething.FallbackTextProperty.Services.Impl
             return template;
         }
 
-        public async Task<Dictionary<string, object>> BuildDictionaryAsync(
-            Guid nodeId, Guid? blockId, Guid dataTypeKey, string? culture)
+        public Dictionary<string, object> BuildDictionary(
+            Guid nodeId, Guid? blockId, string? template, string? culture)
         {
             var node = _contentCache.GetById(false, nodeId);   // Umbraco.Extensions sync ext
             if (node == null) return new Dictionary<string, object>();
 
-            var dataType = await _dataTypeService.GetAsync(dataTypeKey);
-            var config = FallbackTextConfiguration.From(dataType?.ConfigurationObject);
+            var config = new FallbackTextConfiguration { FallbackTemplate = template };
 
             var owner = blockId.HasValue ? GetBlockFromNode(node, blockId.Value) : node;
             return BuildDictionary(owner ?? node, config, culture);

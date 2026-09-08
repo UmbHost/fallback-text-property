@@ -19,13 +19,13 @@ public class FallbackTextController : ControllerBase
         => _fallbackTextService = fallbackTextService;
 
     [HttpGet("dictionary")]
-    public async Task<IActionResult> Dictionary(
+    public IActionResult Dictionary(
         [FromQuery] Guid nodeId,
-        [FromQuery] Guid dataTypeKey,
+        [FromQuery] string? template,
         [FromQuery] string? culture,
         [FromQuery] Guid? blockId)
     {
-        var dict = await _fallbackTextService.BuildDictionaryAsync(nodeId, blockId, dataTypeKey, culture);
+        var dict = _fallbackTextService.BuildDictionary(nodeId, blockId, template, culture);
         return Ok(dict);
     }
 }

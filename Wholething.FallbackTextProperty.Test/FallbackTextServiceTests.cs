@@ -3,7 +3,6 @@ using NUnit.Framework;
 using Umbraco.Cms.Core.Models;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PublishedCache;
-using Umbraco.Cms.Core.Services;
 using Wholething.FallbackTextProperty.Configuration;
 using Wholething.FallbackTextProperty.Services;
 using Wholething.FallbackTextProperty.Services.Impl;
@@ -35,7 +34,6 @@ public class FallbackTextServiceTests
         owner.SetupGet(o => o.Properties).Returns(new[] { StringProp("pageTitle", "Welcome") });
 
         var contentCache = new Mock<IPublishedContentCache>();
-        var dataTypeService = new Mock<IDataTypeService>();
         var logger = new Mock<IFallbackTextLoggerService>();
         var parser = new Mock<IFallbackTextReferenceParser>();
         parser.Setup(p => p.Parse(It.IsAny<string>()))
@@ -43,7 +41,7 @@ public class FallbackTextServiceTests
 
         var service = new FallbackTextService(
             contentCache.Object, Array.Empty<IFallbackTextResolver>(),
-            parser.Object, dataTypeService.Object, logger.Object);
+            parser.Object, logger.Object);
 
         var dict = service.BuildDictionary(owner.Object,
             new FallbackTextConfiguration { FallbackTemplate = "{{pageTitle}}" },
