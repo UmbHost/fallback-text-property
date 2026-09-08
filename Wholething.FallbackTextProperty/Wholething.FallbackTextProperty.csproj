@@ -1,108 +1,40 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Multi-targeting -->
   <PropertyGroup>
-    <TargetFrameworks>net472;net50</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>Wholething.FallbackTextProperty</RootNamespace>
   </PropertyGroup>
 
-  <!-- NuGet package -->
+  <!-- NuGet package metadata -->
   <PropertyGroup>
     <PackageId>Wholething.FallbackTextProperty</PackageId>
-    <Version>1.3</Version>
-    <Copyright></Copyright>
-
-    <PackageIconUrl></PackageIconUrl>
+    <Version>17.0.0</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/wholething/wholething-fallback-text-property</PackageProjectUrl>
     <PackageTags>Umbraco</PackageTags>
     <Authors>Harry Gordon and Wholething (Dean Leigh and Ault Nathanielsz)</Authors>
-
     <Description>FallbackTextProperty is an Umbraco property editor that defines a fallback/default value that users can optionally override.</Description>
     <PackageReleaseNotes>
-		### Version 1.3
-		- Improved block support: node references and some functions work but nothing tree-related (e.g. parent, ancestor, referencing properties on the node that owns the block)
-		- Nodes can now be referenced by GUID (e.g. `{{25eb6a38-50e0-4c1b-95d8-1526d54b06e5:propertyAlias}}`)
-		- Added a resolver for referencing nodes by URL (e.g. `{{url(\global-settings\):propertyAlias}}`)
-		- Added logging for template rendering errors, should be very helpful
-
-		### Version 1.2
-		- Fixed issues around multi-language sites that meant some fallback values were not rendering
-		- Fallbacks inside blocks/nested elements are still not supported but shouldn't cause errors
-
-		### Version 1.1
-		- Added SourceLink support
-	</PackageReleaseNotes>
-
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-
-    <ContentTargetFolders>content</ContentTargetFolders>
-
-    <PackageOutputPath>../../output</PackageOutputPath>
-
-    <AssemblyVersion>1.3.0.0</AssemblyVersion>
-
-    <FileVersion>1.3.0.0</FileVersion>
-
-	<!-- SourceLink essentials-->
-	<RepositoryUrl>https://github.com/wholething/wholething-fallback-text-property</RepositoryUrl>
-	<PublishRepositoryUrl>true</PublishRepositoryUrl>
-	<RepositoryType>git</RepositoryType>
-	<DebugType>embedded</DebugType>
-	<Deterministic>True</Deterministic>
-
+      ### Version 17.0.0
+      - Rebuilt for Umbraco 17 / .NET 10: new backoffice (Lit) property editor, published content cache APIs, backoffice-authorized preview endpoint.
+    </PackageReleaseNotes>
   </PropertyGroup>
 
-  <!-- Necessary for "deterministic" build, apparently? -->
-  <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
-	  <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-  </PropertyGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net472'">
-    <PackageReference Include="UmbracoCms.Web" Version="[8.10.1,9.0)" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net50'">
-    <PackageReference Include="Umbraco.Cms.Web.Website" Version="9.0.0-rc002" />
-    <PackageReference Include="Umbraco.Cms.Web.BackOffice" Version="9.0.0-rc002" />
+  <ItemGroup>
+    <!-- v14+ discontinued Umbraco.Cms.Web.BackOffice; extension libraries reference the
+         granular web packages. Web.Website brings Core + value-converter/composer APIs;
+         Web.Common brings AuthorizationPolicies.BackOfficeAccess for the preview endpoint. -->
+    <PackageReference Include="Umbraco.Cms.Web.Website" Version="17.6.2" />
+    <PackageReference Include="Umbraco.Cms.Web.Common" Version="17.6.2" />
+    <PackageReference Include="Handlebars.Net" Version="2.1.6" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Handlebars.Net" Version="2.0.9" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <Content Include="App_Plugins\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <None Remove="Client\**" />
   </ItemGroup>
-
-  <!-- 
-    If we don't remove Lucene we can't build
-    https://dev.to/mattbrailsford/fixing-analyzer-problems-in-multi-targeted-umbraco-packages-3ijk
-  -->
-  <Target Name="RemoveLuceneAnalyzer" BeforeTargets="CoreCompile">
-    <ItemGroup>
-      <Analyzer Remove="@(Analyzer)" Condition="%(FileName) == 'Lucene.Net.CodeAnalysis.CSharp'" />
-    </ItemGroup>
-  </Target>
-  
-  <!-- Package files -->
-	<ItemGroup>
-		<Content Include="App_Plugins\**\*.*">
-			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
-			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
-		</Content>
-
-		<!-- Target file to copy app_plugins in .netcore -->
-		<None Include="build\**\*.*">
-			<Pack>True</Pack>
-			<PackagePath>buildTransitive</PackagePath>
-		</None>
-  </ItemGroup>
-	<ItemGroup>
-	  <None Update="Build\Wholething.FallbackTextProperty.targets">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
-	</ItemGroup>
 
 </Project>

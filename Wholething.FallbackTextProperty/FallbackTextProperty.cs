@@ -1,5 +1,4 @@
-﻿#if NET5_0_OR_GREATER
-using System;
+﻿using System;
 using Umbraco.Cms.Core.IO;
 using Umbraco.Cms.Core.Packaging;
 using Umbraco.Cms.Core.PropertyEditors;
@@ -57,4 +56,3 @@ namespace Wholething.FallbackTextProperty
         }
     }
 }
-#endif

@@ -1,8 +1,4 @@
-﻿#if NET5_0_OR_GREATER
-using Umbraco.Cms.Core.Models.PublishedContent;
-#else
-using Umbraco.Core.Models.PublishedContent;
-#endif
+﻿using Umbraco.Cms.Core.Models.PublishedContent;
 
 namespace Wholething.FallbackTextProperty.Services.Models
 {

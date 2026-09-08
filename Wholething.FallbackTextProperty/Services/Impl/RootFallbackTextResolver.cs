@@ -2,13 +2,9 @@
 using System.Linq;
 using Wholething.FallbackTextProperty.Extensions;
 using Wholething.FallbackTextProperty.Services.Models;
-#if NET5_0_OR_GREATER
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Models.PublishedContent;
-#else
-using Umbraco.Web.PublishedCache;
-using Umbraco.Core.Models.PublishedContent;
-#endif
+using Umbraco.Extensions;
 
 namespace Wholething.FallbackTextProperty.Services.Impl
 {

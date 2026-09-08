@@ -1,42 +1,43 @@
+using NUnit.Framework;
 using Wholething.FallbackTextProperty.Services;
 using Wholething.FallbackTextProperty.Services.Impl;
-using Xunit;
 
-namespace Wholething.FallbackTextProperty.Test
+namespace Wholething.FallbackTextProperty.Test;
+
+[TestFixture]
+public class FallbackTextReferenceParserTests
 {
-    public class FallbackTextReferenceParserTests
+    private IFallbackTextReferenceParser _referenceParser = null!;
+
+    [SetUp]
+    public void SetUp()
     {
-        private readonly IFallbackTextReferenceParser _referenceParser;
+        _referenceParser = new FallbackTextReferenceParser();
+    }
 
-        public FallbackTextReferenceParserTests()
-        {
-            _referenceParser = new FallbackTextReferenceParser();
-        }
-        
-        [Fact]
-        public void InvalidTemplate()
-        {
-            var template = "This is a {{1234:test}} template";
-            var references = _referenceParser.Parse(template);
+    [Test]
+    public void InvalidTemplate()
+    {
+        var template = "This is a {{1234:test}} template";
+        var references = _referenceParser.Parse(template);
 
-            Assert.Empty(references);
-        }
+        Assert.That(references, Is.Empty);
+    }
 
-        [Fact]
-        public void ValidTemplate()
-        {
-            var template = "This is a {{ancestor(blogPost):companyName}} template This is a {{ancestor(1, 3, 4):companyAddress}} template";
-            var references = _referenceParser.Parse(template);
+    [Test]
+    public void ValidTemplate()
+    {
+        var template = "This is a {{ancestor(blogPost):companyName}} template This is a {{ancestor(1, 3, 4):companyAddress}} template";
+        var references = _referenceParser.Parse(template);
 
-            Assert.Equal(2, references.Count);
+        Assert.That(references.Count, Is.EqualTo(2));
 
-            Assert.Equal("ancestor", references[0].Function);
-            Assert.Single(references[0].Args);
-            Assert.Equal("blogPost", references[0].Args[0]);
+        Assert.That(references[0].Function, Is.EqualTo("ancestor"));
+        Assert.That(references[0].Args.Length, Is.EqualTo(1));
+        Assert.That(references[0].Args[0], Is.EqualTo("blogPost"));
 
-            Assert.Equal("ancestor", references[1].Function);
-            Assert.Equal(3, references[1].Args.Length);
-            Assert.Equal("1", references[1].Args[0]);
-        }
+        Assert.That(references[1].Function, Is.EqualTo("ancestor"));
+        Assert.That(references[1].Args.Length, Is.EqualTo(3));
+        Assert.That(references[1].Args[0], Is.EqualTo("1"));
     }
 }

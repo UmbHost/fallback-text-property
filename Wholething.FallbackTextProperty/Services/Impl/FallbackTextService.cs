@@ -6,18 +6,10 @@ using System.Text.RegularExpressions;
 using HandlebarsDotNet;
 using Wholething.FallbackTextProperty.Extensions;
 using Wholething.FallbackTextProperty.Services.Models;
-#if NET5_0_OR_GREATER
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Models.Blocks;
-#else
-using Umbraco.Core;
-using Umbraco.Core.Services;
-using Umbraco.Core.Models.Blocks;
-using Umbraco.Core.Models.PublishedContent;
-using Umbraco.Web.PublishedCache;
-#endif
 
 namespace Wholething.FallbackTextProperty.Services.Impl
 {

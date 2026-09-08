@@ -1,12 +1,7 @@
 ﻿using System;
 using Wholething.FallbackTextProperty.Services.Models;
-#if NET5_0_OR_GREATER
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Extensions;
-#else
-using Umbraco.Core.Models.PublishedContent;
-using Umbraco.Web;
-#endif
 
 namespace Wholething.FallbackTextProperty.Services.Impl
 {
