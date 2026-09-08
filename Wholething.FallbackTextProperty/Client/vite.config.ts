@@ -7,7 +7,7 @@ export default defineConfig({
       formats: ["es"],
       fileName: "fallback",
     },
-    outDir: "../App_Plugins/FallbackTextstring/dist",
+    outDir: "../wwwroot/App_Plugins/FallbackTextstring/dist",
     emptyOutDir: true,
     rollupOptions: {
       // mustache is bundled; only the backoffice runtime is external.

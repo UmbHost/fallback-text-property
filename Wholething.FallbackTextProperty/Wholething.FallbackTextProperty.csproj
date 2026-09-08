@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -6,6 +6,11 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <RootNamespace>Wholething.FallbackTextProperty</RootNamespace>
+    <!-- Razor Class Library: serve wwwroot/App_Plugins/** at the site root (/App_Plugins/**)
+         rather than the default /_content/{pkg}/, so Umbraco's AppPluginsPackageManifestReader
+         (which scans the App_Plugins path of the WebRoot+ContentRoot composite provider) finds
+         the umbraco-package.json. Same convention as Umbraco.Community.BlockPreview. -->
+    <StaticWebAssetBasePath>/</StaticWebAssetBasePath>
   </PropertyGroup>
 
   <!-- NuGet package metadata -->
@@ -33,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="App_Plugins\**\*" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Client sources build into wwwroot/App_Plugins/FallbackTextstring/dist; don't treat as compile inputs. -->
     <None Remove="Client\**" />
   </ItemGroup>
 
@@ -41,9 +46,11 @@
     <InternalsVisibleTo Include="Wholething.FallbackTextProperty.Test" />
   </ItemGroup>
 
-  <!-- Build the Vite/Lit client bundle into App_Plugins/FallbackTextstring/dist.
+  <!-- Build the Vite/Lit client bundle into wwwroot/App_Plugins/FallbackTextstring/dist.
+       Runs before static web assets are collected so the bundle is packaged/served.
        Skipped on incremental Debug builds when the bundle already exists. -->
-  <Target Name="BuildClient" BeforeTargets="Build" Condition="!Exists('App_Plugins\FallbackTextstring\dist\fallback.js') Or '$(Configuration)' == 'Release'">
+  <Target Name="BuildClient" BeforeTargets="BeforeBuild;ResolveStaticWebAssetsInputs"
+          Condition="!Exists('wwwroot\App_Plugins\FallbackTextstring\dist\fallback.js') Or '$(Configuration)' == 'Release'">
     <Exec Command="npm ci" WorkingDirectory="Client" />
     <Exec Command="npm run build" WorkingDirectory="Client" />
   </Target>
