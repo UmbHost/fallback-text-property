@@ -63,7 +63,10 @@ export abstract class FallbackPreviewElementBase
   }
 
   protected get displayValue(): string {
-    return this.value === "<none>" ? "" : this.value;
+    // Umbraco sets `value` to undefined/null for an empty property, which would
+    // otherwise render the literal string "undefined" in the input.
+    if (this.value == null || this.value === "<none>") return "";
+    return this.value;
   }
 
   async #loadPreview() {
