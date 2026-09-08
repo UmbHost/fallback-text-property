@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using Wholething.FallbackTextProperty.Services;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PropertyEditors;
 
 namespace Wholething.FallbackTextProperty.ValueConverters
 {
-    public class FallbackTextPropertyValueConverter : IPropertyValueConverter
+    public class FallbackTextPropertyValueConverter : PropertyValueConverterBase
     {
         private readonly IFallbackTextService _fallbackTextService;
         private readonly IVariationContextAccessor _variationContextAccessor;
@@ -16,12 +16,12 @@ namespace Wholething.FallbackTextProperty.ValueConverters
             _variationContextAccessor = variationContextAccessor;
         }
 
-        public bool IsConverter(IPublishedPropertyType propertyType)
+        public override bool IsConverter(IPublishedPropertyType propertyType)
         {
             return propertyType.EditorAlias == "FallbackTextstring" || propertyType.EditorAlias == "FallbackTextarea";
         }
 
-        public bool? IsValue(object value, PropertyValueLevel level)
+        public override bool? IsValue(object? value, PropertyValueLevel level)
         {
             switch (level)
             {
@@ -32,17 +32,17 @@ namespace Wholething.FallbackTextProperty.ValueConverters
             }
         }
 
-        public Type GetPropertyValueType(IPublishedPropertyType propertyType)
+        public override Type GetPropertyValueType(IPublishedPropertyType propertyType)
         {
             return typeof(string);
         }
 
-        public PropertyCacheLevel GetPropertyCacheLevel(IPublishedPropertyType propertyType)
+        public override PropertyCacheLevel GetPropertyCacheLevel(IPublishedPropertyType propertyType)
         {
             return PropertyCacheLevel.Elements;
         }
 
-        public object ConvertSourceToIntermediate(IPublishedElement owner, IPublishedPropertyType propertyType, object source,
+        public override object? ConvertSourceToIntermediate(IPublishedElement owner, IPublishedPropertyType propertyType, object? source,
             bool preview)
         {
             var value = source as string;
@@ -62,15 +62,10 @@ namespace Wholething.FallbackTextProperty.ValueConverters
             return _fallbackTextService.BuildValue(owner, propertyType, culture);
         }
 
-        public object ConvertIntermediateToObject(IPublishedElement owner, IPublishedPropertyType propertyType,
-            PropertyCacheLevel referenceCacheLevel, object inter, bool preview)
+        public override object? ConvertIntermediateToObject(IPublishedElement owner, IPublishedPropertyType propertyType,
+            PropertyCacheLevel referenceCacheLevel, object? inter, bool preview)
         {
             return inter;
-        }
-
-        public object ConvertIntermediateToXPath(IPublishedElement owner, IPublishedPropertyType propertyType, PropertyCacheLevel referenceCacheLevel, object inter, bool preview)
-        {
-            return inter?.ToString();
         }
     }
 }

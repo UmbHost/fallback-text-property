@@ -37,4 +37,8 @@
     <None Remove="Client\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Wholething.FallbackTextProperty.Test" />
+  </ItemGroup>
+
 </Project>

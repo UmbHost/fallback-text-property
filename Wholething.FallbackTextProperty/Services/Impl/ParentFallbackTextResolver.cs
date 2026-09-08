@@ -25,9 +25,10 @@ namespace Wholething.FallbackTextProperty.Services.Impl
             }
         }
 
-        protected override IPublishedContent Resolve(string[] args, FallbackTextResolverContext context)
+        protected override IPublishedContent? Resolve(string[] args, FallbackTextResolverContext context)
         {
-            return context.Content.Parent;
+            // TODO v18: IPublishedContent.Parent is [Obsolete] (removal v18) -> use Parent<T>()/navigation.
+            return context.Content?.Parent;
         }
     }
 }

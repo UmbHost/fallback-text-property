@@ -1,20 +1,25 @@
-﻿using System;
+using System;
 using System.Linq;
-using Wholething.FallbackTextProperty.Extensions;
 using Wholething.FallbackTextProperty.Services.Models;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.Services.Navigation;
 using Umbraco.Extensions;
 
 namespace Wholething.FallbackTextProperty.Services.Impl
 {
     public class RootFallbackTextResolver : FallbackTextResolver
     {
-        private readonly IPublishedSnapshotAccessor _publishedSnapshotAccessor;
+        private readonly IPublishedContentCache _contentCache;
+        private readonly IDocumentNavigationQueryService _navigationQueryService;
 
-        public RootFallbackTextResolver(IFallbackTextLoggerService logger, IPublishedSnapshotAccessor publishedSnapshotAccessor) : base(logger)
+        public RootFallbackTextResolver(
+            IFallbackTextLoggerService logger,
+            IPublishedContentCache contentCache,
+            IDocumentNavigationQueryService navigationQueryService) : base(logger)
         {
-            _publishedSnapshotAccessor = publishedSnapshotAccessor;
+            _contentCache = contentCache;
+            _navigationQueryService = navigationQueryService;
         }
 
         protected override string FunctionName => "root";
@@ -30,10 +35,26 @@ namespace Wholething.FallbackTextProperty.Services.Impl
             }
         }
 
-        protected override IPublishedContent Resolve(string[] args, FallbackTextResolverContext context)
+        // v8 used publishedSnapshot.Content.GetAtRoot().First(): the first top-level node in
+        // the content tree, independent of the current node (works from within blocks too).
+        // v14+ has no snapshot; TryGetRootKeys gives the root document keys in tree order.
+        protected override IPublishedContent? Resolve(string[] args, FallbackTextResolverContext context)
         {
-            var snapshot = _publishedSnapshotAccessor.GetPublishedSnapshot();
-            return snapshot.Content.GetAtRoot().First();
+            if (!_navigationQueryService.TryGetRootKeys(out var rootKeys))
+            {
+                return null;
+            }
+
+            foreach (var key in rootKeys)
+            {
+                var node = _contentCache.GetById(false, key);
+                if (node != null)
+                {
+                    return node;
+                }
+            }
+
+            return null;
         }
     }
 }

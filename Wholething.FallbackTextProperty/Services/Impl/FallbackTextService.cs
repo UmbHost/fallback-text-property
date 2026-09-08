@@ -1,48 +1,51 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using HandlebarsDotNet;
-using Wholething.FallbackTextProperty.Extensions;
-using Wholething.FallbackTextProperty.Services.Models;
 using Umbraco.Cms.Core.Services;
 using Umbraco.Cms.Core.Models.PublishedContent;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Models.Blocks;
+using Umbraco.Extensions;
+using Wholething.FallbackTextProperty.Configuration;
+using Wholething.FallbackTextProperty.Extensions;
+using Wholething.FallbackTextProperty.Services.Models;
 
 namespace Wholething.FallbackTextProperty.Services.Impl
 {
     public class FallbackTextService : IFallbackTextService
     {
-        private readonly IPublishedSnapshotAccessor _publishedSnapshotAccessor;
+        private readonly IPublishedContentCache _contentCache;
 
         private readonly IEnumerable<IFallbackTextResolver> _resolvers;
         private readonly IFallbackTextReferenceParser _referenceParser;
-        
+
         private readonly IDataTypeService _dataTypeService;
-        
+
         private readonly IFallbackTextLoggerService _logger;
 
         private const string IdReferencePattern = @"{{(?>node)?([0-9]+):(\w+)}}";
         private const string GuidReferencePattern = @"(?im)[0-9A-F]{8}[-]?(?:[0-9A-F]{4}[-]?){3}[0-9A-F]{12}";
 
-        public FallbackTextService(IPublishedSnapshotAccessor publishedSnapshotAccessor, IEnumerable<IFallbackTextResolver> resolvers, 
+        public FallbackTextService(IPublishedContentCache contentCache, IEnumerable<IFallbackTextResolver> resolvers,
             IFallbackTextReferenceParser referenceParser, IDataTypeService dataTypeService, IFallbackTextLoggerService logger)
         {
-            _publishedSnapshotAccessor = publishedSnapshotAccessor;
+            _contentCache = contentCache;
             _resolvers = resolvers;
             _referenceParser = referenceParser;
             _dataTypeService = dataTypeService;
             _logger = logger;
         }
 
-        public string BuildValue(IPublishedElement owner, IPublishedPropertyType propertyType, string culture)
+        public string BuildValue(IPublishedElement owner, IPublishedPropertyType propertyType, string? culture)
         {
-            var template = GetTemplate(propertyType.DataType.Configuration);
-            template = PreprocessTemplate(template);
+            var config = FallbackTextConfiguration.From(propertyType.DataType.ConfigurationObject);
+            var template = PreprocessTemplate(config.FallbackTemplate ?? string.Empty);
 
-            var dictionary = BuildDictionary(owner, propertyType.DataType.Configuration, culture);
+            var dictionary = BuildDictionary(owner, config, culture);
             dictionary = PreprocessDictionary(dictionary);
 
             var handlebars = Handlebars.Create(new HandlebarsConfiguration()
@@ -110,24 +113,27 @@ namespace Wholething.FallbackTextProperty.Services.Impl
             return template;
         }
 
-        public Dictionary<string, object> BuildDictionary(Guid nodeId, Guid? blockId, Guid dataTypeAlias, string culture)
+        public async Task<Dictionary<string, object>> BuildDictionaryAsync(
+            Guid nodeId, Guid? blockId, Guid dataTypeKey, string? culture)
         {
-            var publishedSnapshot = _publishedSnapshotAccessor.GetPublishedSnapshot();
-            var node = publishedSnapshot.Content.GetById(nodeId);
-            var block = !blockId.HasValue ? null : GetBlockFromNode(node, blockId.Value);
-
+            var node = _contentCache.GetById(false, nodeId);   // Umbraco.Extensions sync ext
             if (node == null) return new Dictionary<string, object>();
 
-            return BuildDictionary(blockId.HasValue ? block : node, GetDataTypeConfiguration(dataTypeAlias), culture);
+            var dataType = await _dataTypeService.GetAsync(dataTypeKey);
+            var config = FallbackTextConfiguration.From(dataType?.ConfigurationObject);
+
+            var owner = blockId.HasValue ? GetBlockFromNode(node, blockId.Value) : node;
+            return BuildDictionary(owner ?? node, config, culture);
         }
 
-        private IPublishedElement GetBlockFromNode(IPublishedContent node, Guid blockId)
+        private IPublishedElement? GetBlockFromNode(IPublishedContent node, Guid blockId)
         {
             foreach (var publishedProperty in node.Properties)
             {
                 if (publishedProperty.PropertyType.ClrType == typeof(BlockListModel))
                 {
-                    var blockList = (BlockListModel) publishedProperty.GetValue();
+                    var blockList = (BlockListModel?) publishedProperty.GetValue();
+                    if (blockList == null) continue;
                     foreach (var blockListItem in blockList)
                     {
                         if (blockListItem.Content.Key == blockId) return blockListItem.Content;
@@ -138,19 +144,14 @@ namespace Wholething.FallbackTextProperty.Services.Impl
             return null;
         }
 
-        private object GetDataTypeConfiguration(Guid dataTypeKey)
+        internal Dictionary<string, object> BuildDictionary(IPublishedElement owner, FallbackTextConfiguration config, string? culture)
         {
-            return _dataTypeService.GetDataType(dataTypeKey).Configuration;
-        }
-
-        private Dictionary<string, object> BuildDictionary(IPublishedElement owner, object dataTypeConfiguration, string culture)
-        {
-            var template = GetTemplate(dataTypeConfiguration);
+            var template = config.FallbackTemplate ?? string.Empty;
             var dictionary = new Dictionary<string, object>();
 
             if (owner is IPublishedContent node)
             {
-                dictionary.Add("name", node.Name);
+                dictionary.Add("name", node.Name ?? string.Empty);
             }
 
             if (owner != null)
@@ -171,7 +172,7 @@ namespace Wholething.FallbackTextProperty.Services.Impl
             {
                 if (referencedNode == null) continue;
 
-                dictionary.Add($"{key}:name", referencedNode.Name);
+                dictionary.Add($"{key}:name", referencedNode.Name ?? string.Empty);
 
                 foreach (var property in referencedNode.Properties)
                 {
@@ -186,26 +187,18 @@ namespace Wholething.FallbackTextProperty.Services.Impl
             return dictionary;
         }
 
-        private string GetTemplate(object configuration)
+        private Dictionary<string, IPublishedContent?> GetAllReferencedNodes(string template, IPublishedElement? owner)
         {
-            var template = (string)((Dictionary<string, object>)configuration)["fallbackTemplate"];
-            return template;
-        }
+            var nodes = new Dictionary<string, IPublishedContent?>();
 
-        private Dictionary<string, IPublishedContent> GetAllReferencedNodes(string template, IPublishedElement owner)
-        {
-            var nodes = new Dictionary<string, IPublishedContent>();
-            
             nodes.AddRange(GetFunctionReferences(template, owner));
-            
-            var publishedSnapshot = _publishedSnapshotAccessor.GetPublishedSnapshot();
 
             var idReferences = GetIdReferences(template);
             nodes.AddRange(
                 idReferences
                     .ToDictionary(
-                        id => id.ToString(), 
-                        id => publishedSnapshot.Content.GetById(id)
+                        id => id.ToString(),
+                        id => _contentCache.GetById(false, id)
                     )
             );
 
@@ -214,7 +207,7 @@ namespace Wholething.FallbackTextProperty.Services.Impl
                 guidReferences
                     .ToDictionary(
                         id => id.ToString(),
-                        id => publishedSnapshot.Content.GetById(id)
+                        id => _contentCache.GetById(false, id)
                     )
             );
 
@@ -249,11 +242,11 @@ namespace Wholething.FallbackTextProperty.Services.Impl
             return guids;
         }
 
-        private Dictionary<string, IPublishedContent> GetFunctionReferences(string template, IPublishedElement owner)
+        private Dictionary<string, IPublishedContent?> GetFunctionReferences(string template, IPublishedElement? owner)
         {
             var references = _referenceParser.Parse(template);
 
-            var resolverContext = new FallbackTextResolverContext(owner);
+            var resolverContext = new FallbackTextResolverContext(owner!);
 
             // Need to keep the key with the resolved node
             var nodes = references
@@ -264,7 +257,7 @@ namespace Wholething.FallbackTextProperty.Services.Impl
             return nodes;
         }
 
-        private IPublishedContent TryResolve(FallbackTextFunctionReference reference, FallbackTextResolverContext context)
+        private IPublishedContent? TryResolve(FallbackTextFunctionReference reference, FallbackTextResolverContext context)
         {
             var resolver = _resolvers.FirstOrDefault(r => r.CanResolve(reference, context));
             return resolver?.Resolve(reference, context);

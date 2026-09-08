@@ -11,7 +11,7 @@ namespace Wholething.FallbackTextProperty.Extensions
         /// <param name="property"></param>
         /// <param name="culture"></param>
         /// <returns></returns>
-        public static object GetSourceValueWithCulture(this IPublishedProperty property, string culture)
+        public static object? GetSourceValueWithCulture(this IPublishedProperty property, string? culture)
         {
             if (property.PropertyType.VariesByCulture())
             {

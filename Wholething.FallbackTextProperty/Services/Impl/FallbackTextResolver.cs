@@ -42,11 +42,11 @@ namespace Wholething.FallbackTextProperty.Services.Impl
             }
         }
 
-        public IPublishedContent Resolve(FallbackTextFunctionReference reference, FallbackTextResolverContext context)
+        public IPublishedContent? Resolve(FallbackTextFunctionReference reference, FallbackTextResolverContext context)
         {
             return Resolve(reference.Args, context);
         }
 
-        protected abstract IPublishedContent Resolve(string[] args, FallbackTextResolverContext context);
+        protected abstract IPublishedContent? Resolve(string[] args, FallbackTextResolverContext context);
     }
 }

@@ -10,6 +10,6 @@ namespace Wholething.FallbackTextProperty.Services.Models
         }
 
         public IPublishedElement Element { get; set; }
-        public IPublishedContent Content => Element as IPublishedContent;
+        public IPublishedContent? Content => Element as IPublishedContent;
     }
 }

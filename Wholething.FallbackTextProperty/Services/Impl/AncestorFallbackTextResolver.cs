@@ -24,8 +24,12 @@ namespace Wholething.FallbackTextProperty.Services.Impl
             }
         }
 
-        protected override IPublishedContent Resolve(string[] args, FallbackTextResolverContext context)
+        protected override IPublishedContent? Resolve(string[] args, FallbackTextResolverContext context)
         {
+            if (context.Content == null)
+            {
+                return null;
+            }
             if (args.Length == 1)
             {
                 return context.Content.Ancestor(args[0]);

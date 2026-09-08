@@ -1,20 +1,24 @@
-﻿using System;
-using System.Linq;
-using Wholething.FallbackTextProperty.Extensions;
+using System;
 using Wholething.FallbackTextProperty.Services.Models;
 using Umbraco.Cms.Core.PublishedCache;
 using Umbraco.Cms.Core.Models.PublishedContent;
+using Umbraco.Cms.Core.Services;
 using Umbraco.Extensions;
 
 namespace Wholething.FallbackTextProperty.Services.Impl
 {
     public class UrlFallbackTextResolver : FallbackTextResolver
     {
-        private readonly IPublishedSnapshotAccessor _publishedSnapshotAccessor;
+        private readonly IPublishedContentCache _contentCache;
+        private readonly IDocumentUrlService _documentUrlService;
 
-        public UrlFallbackTextResolver(IFallbackTextLoggerService logger, IPublishedSnapshotAccessor publishedSnapshotAccessor) : base(logger)
+        public UrlFallbackTextResolver(
+            IFallbackTextLoggerService logger,
+            IPublishedContentCache contentCache,
+            IDocumentUrlService documentUrlService) : base(logger)
         {
-            _publishedSnapshotAccessor = publishedSnapshotAccessor;
+            _contentCache = contentCache;
+            _documentUrlService = documentUrlService;
         }
 
         protected override string FunctionName => "url";
@@ -30,10 +34,13 @@ namespace Wholething.FallbackTextProperty.Services.Impl
             }
         }
 
-        protected override IPublishedContent Resolve(string[] args, FallbackTextResolverContext context)
+        // v8 used publishedSnapshot.Content.GetByRoute(route). v14+ removed route lookup from
+        // the content cache; IDocumentUrlService maps a route to a document key, then the cache
+        // resolves the published content.
+        protected override IPublishedContent? Resolve(string[] args, FallbackTextResolverContext context)
         {
-            var snapshot = _publishedSnapshotAccessor.GetPublishedSnapshot();
-            return snapshot.Content.GetByRoute(args[0]);
+            var key = _documentUrlService.GetDocumentKeyByRoute(args[0], culture: null, documentStartNodeId: null, isDraft: false);
+            return key.HasValue ? _contentCache.GetById(false, key.Value) : null;
         }
     }
 }
