@@ -63,11 +63,28 @@ is unchanged — it still reads `propertyType.DataType.ConfigurationObject`.
   field still usable). Own-node/node-id templates preview; function-ref (`ancestor:`/`parent:`)
   preview keys aren't stripped client-side (server render remains authoritative).
 
+## Preview auth — VERIFIED against the CMS source (was the main open question)
+
+The plain `[Authorize(Policy = AuthorizationPolicies.BackOfficeAccess)]` controller **does**
+authenticate the `UMB_AUTH_CONTEXT.getLatestToken()` bearer token — no 401 for a logged-in
+backoffice user, and it needs neither `[MapToApi]` nor an explicit `AuthenticationSchemes` on the
+attribute. Why (from `D:\Repos\Umbraco-CMS`):
+
+- `BackOfficeAuthPolicyBuilderExtensions.CreatePolicies` builds the `BackOfficeAccess` policy as
+  `policy.AuthenticationSchemes.Add(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)`
+  + `new BackOfficeRequirement()`. Because the **policy itself pins the OpenIddict bearer scheme**,
+  the authorization middleware validates the bearer header on *any* endpoint using this policy —
+  `[MapToApi]` on `ManagementApiControllerBase` is for API routing/features, not for auth.
+- Client side, `authContext.getLatestToken(): Promise<string>` exists and auto-refreshes via a Web
+  Lock; core sends it as `Authorization: Bearer ${await getLatestToken()}` (auth.context.ts) —
+  identical to our `#loadPreview`.
+
+Left: only a live confirmation that a *logged-in* session actually returns 200 with data (i.e. the
+whole thing is wired), but the scheme/token mechanics are no longer in doubt.
+
 ## ⚠ Needs an in-browser smoke test on a running 17.6.2 backoffice (cannot unit-verify)
 
-1. The preview fetch actually authenticates against `[Authorize(BackOfficeAccess)]` with the
-   bearer token (bearer vs cookie scheme on a non-management custom controller).
-2. `UMB_PROPERTY_DATASET_CONTEXT` timing: config + context both resolve before the first
+1. `UMB_PROPERTY_DATASET_CONTEXT` timing: config + context both resolve before the first
    preview attempt (there's a `firstUpdated` retry, but confirm live).
 3. Block-scoped editing: `blockId` isn't resolved yet (own-node only) — matches the old
    package's documented "nothing tree-related inside blocks" limitation, but confirm.
