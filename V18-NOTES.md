@@ -4,28 +4,30 @@
 stays the Umbraco-17 LTS line.
 
 **Target framework:** Umbraco 18 (released 2026-06-25) is an **STS** release on **.NET 10** — the same
-TFM as Umbraco 17 LTS. So **no `TargetFramework` change** is needed; the v18 build stays `net10.0`.
-The work is: bump the Umbraco package refs to `18.x` and fix the APIs removed in v18.
+TFM as Umbraco 17 LTS. So **no `TargetFramework` change** was needed; the v18 build stays `net10.0`.
 
-## Package bumps
-- `Umbraco.Cms.Web.Website` `17.6.2` → `18.x`
-- `Umbraco.Cms.Web.Common` `17.6.2` → `18.x`
+## Status: DONE (built + tested against Umbraco.Cms.* 18.1.1)
+
+## Package bumps (applied)
+- `Umbraco.Cms.Web.Website` `17.6.2` → `18.1.1`
+- `Umbraco.Cms.Web.Common` `17.6.2` → `18.1.1`
 - `Handlebars.Net` `2.1.6` — unaffected (third-party).
 
-## Removed-in-18 APIs used by this package (fix on this branch)
-- `FallbackTextProperty.cs:41` — `SetupFallbackTextProperty : PackageMigrationBase`. `PackageMigrationBase`
-  is obsolete (removal v18) → change base to `AsyncPackageMigrationBase` and its `Migrate()` to the
-  async override. (The new `FallbackEditorUiAliasMigration` already uses the current `AsyncMigrationBase`.)
-- `Services/Impl/ParentFallbackTextResolver.cs:31` — `context.Content?.Parent`. `IPublishedContent.Parent`
-  is obsolete (removal v18) → use the `Umbraco.Extensions` `Parent<T>()` extension, or
-  `IDocumentNavigationQueryService` for keys. The resolver would then need the nav service injected
-  (it currently uses only the published content) — small ctor change + DI is already in place.
+## Removed-in-18 APIs fixed on this branch
+- `FallbackTextProperty.cs` — `SetupFallbackTextProperty` moved from `PackageMigrationBase`
+  (**removed** in 18, not merely obsolete) to `AsyncPackageMigrationBase`; `Migrate()` → `MigrateAsync()`
+  returning `Task.CompletedTask`. The 18 `AsyncPackageMigrationBase` ctor signature is identical to the
+  old base, so the ctor was unchanged. (`FallbackEditorUiAliasMigration` already used `AsyncMigrationBase`.)
+- `Services/Impl/ParentFallbackTextResolver.cs` — `context.Content?.Parent` (property removed from
+  `IPublishedContent` in 18) → `context.Content?.Parent()`, the `Umbraco.Extensions` friendly extension
+  (`FriendlyPublishedContentExtensions.Parent`), already imported. No ctor/DI change needed.
 
-## Not affected
+## Not affected (confirmed against 18.1.1)
 - Value converter, services/resolvers (other than Parent), the preview API controller + its
   `[Authorize(BackOfficeAccess)]` auth, the Lit client, schema/UI aliases, App_Plugins paths.
 - `.Children`/`BlockListItem.ContentUdi` — not used by this package (grep clean).
 
-## Verify at implementation
-- ⚠ Confirm `Umbraco.Cms.Web.*` 18.x is on nuget.org and the exact `AsyncPackageMigrationBase` ctor
-  signature + the `Parent<T>()` extension namespace in 18, then bump + build + run the unit tests.
+## Verification
+- `dotnet build -c Release` → 0 errors (2 pre-existing `CS8714` nullability warnings in
+  `DictionaryExtensions`, unrelated). `dotnet test` → 15/15 pass. Verified against the local CMS
+  checkout `origin/release/18.1.1`.

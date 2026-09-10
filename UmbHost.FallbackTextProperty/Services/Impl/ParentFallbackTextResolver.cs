@@ -27,8 +27,9 @@ namespace UmbHost.FallbackTextProperty.Services.Impl
 
         protected override IPublishedContent? Resolve(string[] args, FallbackTextResolverContext context)
         {
-            // TODO v18: IPublishedContent.Parent is [Obsolete] (removal v18) -> use Parent<T>()/navigation.
-            return context.Content?.Parent;
+            // v18: IPublishedContent.Parent property was removed; use the Umbraco.Extensions
+            // Parent() extension (FriendlyPublishedContentExtensions) instead.
+            return context.Content?.Parent();
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Umbraco.Cms.Core.IO;
 using Umbraco.Cms.Core.Packaging;
 using Umbraco.Cms.Core.PropertyEditors;
@@ -38,7 +39,7 @@ namespace UmbHost.FallbackTextProperty
         }
     }
 
-    public class SetupFallbackTextProperty : PackageMigrationBase
+    public class SetupFallbackTextProperty : AsyncPackageMigrationBase
     {
         public SetupFallbackTextProperty(
             IPackagingService packagingService,
@@ -53,10 +54,11 @@ namespace UmbHost.FallbackTextProperty
         {
         }
 
-        protected override void Migrate()
+        protected override Task MigrateAsync()
         {
             // we don't actually need to do anything, but this means we end up
-            // on the list of installed packages. 
+            // on the list of installed packages.
+            return Task.CompletedTask;
         }
     }
 }
