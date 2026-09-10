@@ -13,20 +13,33 @@
     <StaticWebAssetBasePath>/</StaticWebAssetBasePath>
   </PropertyGroup>
 
-  <!-- NuGet package metadata -->
+  <!-- NuGet package + Umbraco Marketplace metadata -->
   <PropertyGroup>
     <PackageId>UmbHost.FallbackTextProperty</PackageId>
     <Version>17.0.0</Version>
+    <Authors>UmbHost</Authors>
+    <Company>UmbHost</Company>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/wholething/wholething-fallback-text-property</PackageProjectUrl>
-    <PackageTags>Umbraco</PackageTags>
-    <Authors>Harry Gordon and Wholething (Dean Leigh and Ault Nathanielsz)</Authors>
-    <Description>FallbackTextProperty is an Umbraco property editor that defines a fallback/default value that users can optionally override.</Description>
+    <PackageProjectUrl>https://github.com/UmbHost/fallback-text-property</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/UmbHost/fallback-text-property</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>umbraco umbraco-marketplace property-editor fallback</PackageTags>
+    <Description>An Umbraco property editor with a fallback/default value (Mustache template over node properties) that editors can optionally override. Maintained by UmbHost (continuation of the original Wholething package).</Description>
     <PackageReleaseNotes>
       ### Version 17.0.0
       - Rebuilt for Umbraco 17 / .NET 10: new backoffice (Lit) property editor, published content cache APIs, backoffice-authorized preview endpoint.
+      - Rebranded Wholething.* -&gt; UmbHost.*; startup migration re-points existing data types.
     </PackageReleaseNotes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Ship the repo-root README + icon + marketplace manifest into the package. -->
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\icon.png" Pack="true" PackagePath="\" />
+    <None Include="..\umbraco-marketplace.json" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- v14+ discontinued Umbraco.Cms.Web.BackOffice; extension libraries reference the

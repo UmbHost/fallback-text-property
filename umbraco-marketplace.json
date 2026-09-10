@@ -1,0 +1,10 @@
+{
+  "$schema": "https://marketplace.umbraco.com/umbraco-marketplace-schema.json",
+  "category": "Backoffice Extensions",
+  "description": "An Umbraco property editor with a fallback/default value (a Mustache template over node properties) that editors can optionally override.",
+  "authorName": "UmbHost",
+  "authorUrl": "https://umbhost.net",
+  "websiteUrl": "https://github.com/UmbHost/fallback-text-property",
+  "supportUrl": "https://github.com/UmbHost/fallback-text-property/issues",
+  "defaultScreenshot": "icon.png"
+}

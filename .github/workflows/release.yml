@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  id-token: write   # required for OIDC trusted publishing to nuget.org
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Pack (version from tag, e.g. v1.0.0 -> 1.0.0)
+        run: dotnet pack UmbHost.FallbackTextProperty/UmbHost.FallbackTextProperty.csproj -c Release -o artifacts /p:Version=${GITHUB_REF_NAME#v}
+      # Trusted publishing: exchange the GitHub OIDC token for a short-lived nuget.org API key.
+      # Requires a Trusted Publisher policy on nuget.org bound to UmbHost/<repo> + this workflow.
+      - uses: NuGet/login@v1
+        id: login
+        with:
+          user: UmbHost
+      - name: Push to nuget.org
+        run: dotnet nuget push artifacts/*.nupkg --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
