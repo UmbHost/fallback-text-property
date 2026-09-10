@@ -51,8 +51,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Client sources build into wwwroot/App_Plugins/FallbackTextstring/dist; don't treat as compile inputs. -->
+    <!-- Client sources build into wwwroot/App_Plugins/FallbackTextstring/dist; don't treat as
+         compile inputs and don't ship the TS/npm source in the package. -->
     <None Remove="Client\**" />
+    <Content Remove="Client\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -66,6 +68,19 @@
           Condition="!Exists('wwwroot\App_Plugins\FallbackTextstring\dist\fallback.js') Or '$(Configuration)' == 'Release'">
     <Exec Command="npm ci" WorkingDirectory="Client" />
     <Exec Command="npm run build" WorkingDirectory="Client" />
+  </Target>
+
+  <!-- Register the Vite-generated bundle as static web assets. On a clean checkout dist/ is
+       gitignored, so it doesn't exist at project-evaluation time and the default wwwroot Content
+       glob misses it; without this the .js bundle is never packed/served. Runs after BuildClient
+       produces the files and before static web assets are resolved. The Remove-then-Include
+       de-dupes when an incremental build already globbed dist at evaluation time. -->
+  <Target Name="IncludeGeneratedClientAssets" AfterTargets="BuildClient" BeforeTargets="ResolveStaticWebAssetsInputs">
+    <ItemGroup>
+      <_GeneratedClientAsset Include="wwwroot\App_Plugins\FallbackTextstring\dist\**\*" />
+      <Content Remove="@(_GeneratedClientAsset)" />
+      <Content Include="@(_GeneratedClientAsset)" />
+    </ItemGroup>
   </Target>
 
 </Project>
