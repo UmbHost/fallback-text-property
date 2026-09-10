@@ -26,6 +26,27 @@ namespace UmbHost.FallbackTextProperty.Services.Impl
         private const string IdReferencePattern = @"{{(?>node)?([0-9]+):(\w+)}}";
         private const string GuidReferencePattern = @"(?im)[0-9A-F]{8}[-]?(?:[0-9A-F]{4}[-]?){3}[0-9A-F]{12}";
 
+        // Node references can be a GUID (portable across environments) as well as a legacy
+        // integer id. Handlebars variable names can't start with a digit and don't tolerate
+        // hyphens, so integer AND GUID references are canonicalised identically (see
+        // NormalizeNodeKey) on BOTH the template side and the dictionary-key side so they match.
+        private const string GuidCorePattern = @"[0-9A-Fa-f]{8}-?(?:[0-9A-Fa-f]{4}-?){3}[0-9A-Fa-f]{12}";
+        private const string GuidReferenceInBracesPattern = @"{{(?>node)?(" + GuidCorePattern + @"):(\w+)}}";
+        private static readonly Regex NodeReferenceKeyRegex =
+            new(@"^(?>node)?(" + GuidCorePattern + @"|[0-9]+):(\w+)$", RegexOptions.Compiled);
+
+        // Canonical, Handlebars-safe key for a node reference: drop GUID hyphens and, since a
+        // variable can't start with a digit, prefix numeric/GUID references with "node".
+        private static string NormalizeNodeKey(string idOrGuid, string alias)
+        {
+            var id = idOrGuid.Replace("-", string.Empty);
+            if (id.Length > 0 && char.IsDigit(id[0]))
+            {
+                id = $"node{id}";
+            }
+            return $"{id}:{alias}";
+        }
+
         public FallbackTextService(IPublishedContentCache contentCache, IEnumerable<IFallbackTextResolver> resolvers,
             IFallbackTextReferenceParser referenceParser, IFallbackTextLoggerService logger)
         {
@@ -63,7 +84,7 @@ namespace UmbHost.FallbackTextProperty.Services.Impl
             }
         }
 
-        private Dictionary<string, object> PreprocessDictionary(Dictionary<string, object> dictionary)
+        internal Dictionary<string, object> PreprocessDictionary(Dictionary<string, object> dictionary)
         {
             var outDictionary = new Dictionary<string, object>();
             foreach (var key in dictionary.Keys)
@@ -76,24 +97,33 @@ namespace UmbHost.FallbackTextProperty.Services.Impl
 
         private string PreprocessKey(string key)
         {
-            if (char.IsDigit(key[0]))
+            // Integer or GUID node reference (e.g. "1207:alias" / "531fd84f-...:alias"):
+            // canonicalise the same way PreprocessTemplate does so template and key match.
+            var match = NodeReferenceKeyRegex.Match(key);
+            if (match.Success)
             {
-                return $"node{key}";
+                return NormalizeNodeKey(match.Groups[1].Value, match.Groups[2].Value);
             }
-            else
-            {
-                return key.StripNonKeyChars();
-            }
+
+            // Plain property alias or function reference: unchanged behaviour.
+            return key.StripNonKeyChars();
         }
 
-        private string PreprocessTemplate(string template)
+        internal string PreprocessTemplate(string template)
         {
             // There is some quirk of the Mustache implementation that means a variable name cannot
-            // start with a number!
+            // start with a number (and GUID references also carry hyphens Handlebars dislikes),
+            // so canonicalise integer and GUID references identically to their dictionary keys.
             template = Regex.Replace(
                 template,
                 IdReferencePattern,
-                m => $"{{{{node{m.Groups[1].Value}:{m.Groups[2].Value}}}}}"
+                m => $"{{{{{NormalizeNodeKey(m.Groups[1].Value, m.Groups[2].Value)}}}}}"
+            );
+
+            template = Regex.Replace(
+                template,
+                GuidReferenceInBracesPattern,
+                m => $"{{{{{NormalizeNodeKey(m.Groups[1].Value, m.Groups[2].Value)}}}}}"
             );
 
             template = Regex.Replace(
