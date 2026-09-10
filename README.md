@@ -26,7 +26,7 @@ This property editor is a collaboration between [Harry Gordon](https://www.linke
 
 ## Installation
 
-You can find the package on NuGet: https://www.nuget.org/packages/Wholething.FallbackTextProperty/
+You can find the package on NuGet: https://www.nuget.org/packages/UmbHost.FallbackTextProperty/
 
 ## Configuration and editor experience
 
@@ -72,5 +72,5 @@ There are a few notable limitations:
 The package is built in Azure DevOps but in the event that you need build it locally you can use the following command (replacing `local-package-path` and `version`):
 
 ```
-dotnet pack Wholething.FallbackTextProperty\Wholething.FallbackTextProperty.csproj --output {local-package-path} /p:Configuration=Debug /p:PackageVersion={version}-local --include-symbols
+dotnet pack UmbHost.FallbackTextProperty\UmbHost.FallbackTextProperty.csproj --output {local-package-path} /p:Configuration=Debug /p:PackageVersion={version}-local --include-symbols
 ```

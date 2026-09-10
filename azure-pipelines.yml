@@ -8,7 +8,7 @@ pool:
 variables:
   solution: '**/*.sln'
   buildConfiguration: 'Release'
-  packageProject: 'Wholething.FallbackTextProperty/Wholething.FallbackTextProperty.csproj'
+  packageProject: 'UmbHost.FallbackTextProperty/UmbHost.FallbackTextProperty.csproj'
   major: 1
   minor: 3
   patch: $[counter(format('{0}.{1}', variables['Major'], variables['Minor']), 0)] # this will reset when major/minor changes
