@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Umbraco.Cms.Core.Composing;
 using Umbraco.Cms.Core.DependencyInjection;
+using UmbHost.FallbackTextProperty.Migrations;
 using UmbHost.FallbackTextProperty.Services;
 using UmbHost.FallbackTextProperty.Services.Impl;
 
@@ -22,6 +23,9 @@ namespace UmbHost.FallbackTextProperty.Composers
             services.AddTransient<IFallbackTextResolver, RootFallbackTextResolver>();
             services.AddTransient<IFallbackTextResolver, AncestorFallbackTextResolver>();
             services.AddTransient<IFallbackTextResolver, UrlFallbackTextResolver>();
+
+            // Injected into FallbackEditorUiAliasMigration (DI-activated migration).
+            services.AddTransient<FallbackEditorUiAliasMigrator>();
             return services;
         }
     }
@@ -32,7 +36,9 @@ namespace UmbHost.FallbackTextProperty.Composers
         {
             FallbackTextRegistrations.Add(builder.Services);
             // FallbackTextPropertyValueConverter : PropertyValueConverterBase : IDiscoverable,
-            // so it is auto-registered by Umbraco type scanning — no explicit Append needed.
+            // and FallbackTextPropertyMigrationPlan : PackageMigrationPlan are auto-discovered by
+            // Umbraco type scanning — the plan runs its pending step (the EditorUiAlias re-point)
+            // once at startup. No explicit registration needed here.
         }
     }
 }

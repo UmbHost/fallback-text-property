@@ -32,6 +32,9 @@ namespace UmbHost.FallbackTextProperty
         protected override void DefinePlan()
         {
             To<SetupFallbackTextProperty>(new Guid("0f55468d-d1bb-4ae5-ad4b-900807634894"));
+            // Runs once for existing installs (state advances past the step above): re-point
+            // legacy Wholething.PropertyEditorUi.* data types to UmbHost.*.
+            To<Migrations.FallbackEditorUiAliasMigration>(new Guid("7c3b6e18-2a49-4f0d-b5c1-9e83d2f6a047"));
         }
     }
 
